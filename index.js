@@ -1,5 +1,7 @@
 let map;
 let url = "http://localhost:8090/iserver/services/map-sxx/rest/maps/City@EmergDS";
+let url1 = "http://localhost:8090/iserver/services/data-sxx/rest/data";
+let markers = []
 let mainCRS = L.Proj.CRS("EPSG:3857", {
         bounds: L.bounds([11541226.6, 3579087.71], [11546271.45, 3585516.41]),
         origin: [11544275.29, 3582369.97]
@@ -37,102 +39,62 @@ function translation() {
     }
     flag = !flag
 }
-// query();
-// //附近医院查询
-// function query() {
-//     let param = new SuperMap.QueryBySQLParameters({
-//         queryParams: [{
-//             name: "Hospital@EmergDS",
-//             attributeFilter: "1 = 1"
-//         }]
-//     })
-//     L.supermap
-//         .queryService(url)
-//         .queryBySQL(param, function(serviceResult) {
-//             //console.log(serviceResult)
-//             // console.log(serviceResult.result.recordsets[0].features.features)
-//             let text = serviceResult.result.recordsets[0].features.features
-//             console.log(text)
-//             let data = [11542678.4805783, 3582697.888648468, 30]
-//             text.forEach(item => {
-//                 let lat = item.geometry.coordinates[0]
-//                 let lng = item.geometry.coordinates[1]
-//                     //console.log(lat, lng)
-//                     //console.log()
-//                 let pos = mainCRS.unproject(L.point(lat, lng));
-//                 let loc = [pos.lat, pos.lng, 30];
-//                 data.push({
-//                     name: item.properties.Name,
-//                     value: loc
-//                 })
 
-
-
-//             });
-//             console.log(data)
-//             data1 = {
-//                 name: '市第一人民医院',
-//                 value: [11542678.4805783, 3582697.888648468, 30]
-//             }
-
-
-//         })
-// }
 //医院点击事件
 $("#ldcxclick").click(function() {
     $("#hos-pan").toggle(1000)
 })
 
 option = {
-    legend: {
-        data: ['text1', 'text2'],
-        align: 'left'
-    },
-    toolbox: {
-        feature: {
-            magicType: {
-                type: ['stack', 'tiled']
-            },
-            saveAsImage: {
-                pixelRatio: 2
+        legend: {
+            data: ['text1', 'text2'],
+            align: 'left'
+        },
+        toolbox: {
+            feature: {
+                magicType: {
+                    type: ['stack', 'tiled']
+                },
+                saveAsImage: {
+                    pixelRatio: 2
+                }
             }
+        },
+        tooltip: {},
+        xAxis: {
+            data: ['1', '2', '3', '4', '5'],
+            silent: false,
+            splitLine: {
+                show: false
+            }
+        },
+        yAxis: {},
+        series: [{
+            name: 'bar',
+            type: 'bar',
+            animationDelay: function(idx) {
+                return idx * 10;
+            }
+        }, {
+            name: 'bar2',
+            type: 'bar',
+            animationDelay: function(idx) {
+                return idx * 10 + 100;
+            }
+        }],
+        animationEasing: 'elasticOut',
+        animationDelayUpdate: function(idx) {
+            return idx * 5;
         }
-    },
-    tooltip: {},
-    xAxis: {
-        data: ['1', '2', '3', '4', '5'],
-        silent: false,
-        splitLine: {
-            show: false
-        }
-    },
-    yAxis: {},
-    series: [{
-        name: 'bar',
-        type: 'bar',
-        animationDelay: function(idx) {
-            return idx * 10;
-        }
-    }, {
-        name: 'bar2',
-        type: 'bar',
-        animationDelay: function(idx) {
-            return idx * 10 + 100;
-        }
-    }],
-    animationEasing: 'elasticOut',
-    animationDelayUpdate: function(idx) {
-        return idx * 5;
+
+
     }
-
-
-}
-var div = L.DomUtil.create('div');
-var chart = echarts.init(div, '', {
-    width: 500,
-    height: 500
-});
-chart.setOption(option);
+    // var div = L.DomUtil.create('div');
+    // var chart = echarts.init(div, '', {
+    //     width: 500,
+    //     height: 500
+    // });
+    //chart.setOption(option);
 
 
 function query() {
@@ -183,5 +145,43 @@ function query() {
 
 }
 $("#showHos").click(function() {
-    query();
+        query();
+    })
+    //r热点图
+var pulseIcon = L.icon.pulse({
+    iconSize: [18, 18],
+    color: '#2f8'
 })
+loadPulse();
+
+function loadPulse() {
+    var point1 = { x: 11541226.78, y: 3579088.0 }
+    var point2 = { x: 11546271.22, y: 3585516.41 }
+    var bounds = L.latLngBounds(L.latLng(point1.y, point1.x), L.latLng(point2.y, point2.x));
+    console.log(bounds)
+    var boundsParam = new SuperMap.GetFeaturesByBoundsParameters({
+        datasetNames: ["EmergDS:Hospital_R"],
+        bounds: bounds,
+
+    });
+    L.supermap
+        .featureService(url1)
+        .getFeaturesByBounds(boundsParam, function(serviceResult) {
+            console.log(serviceResult)
+            createLayers(serviceResult.result.features);
+        });
+}
+
+function createLayers(result) {
+    if (!result || !result.features || result.features.length < 1) {
+        return;
+    }
+    result.features.map(function(feature) {
+        console.log(feature)
+        console.log(L.point(feature.geometry.coordinates[0][0][0]))
+        var latLng = L.CRS.EPSG3857.unproject(L.point(feature.geometry.coordinates[0][0][0]));
+        console.log(latLng)
+        markers.push(L.marker(latLng, { icon: pulseIcon }));
+    });
+    resultLayer = L.featureGroup(markers).addTo(map);
+}
