@@ -37,99 +37,151 @@ function translation() {
     }
     flag = !flag
 }
-query();
-//附近医院查询
+// query();
+// //附近医院查询
+// function query() {
+//     let param = new SuperMap.QueryBySQLParameters({
+//         queryParams: [{
+//             name: "Hospital@EmergDS",
+//             attributeFilter: "1 = 1"
+//         }]
+//     })
+//     L.supermap
+//         .queryService(url)
+//         .queryBySQL(param, function(serviceResult) {
+//             //console.log(serviceResult)
+//             // console.log(serviceResult.result.recordsets[0].features.features)
+//             let text = serviceResult.result.recordsets[0].features.features
+//             console.log(text)
+//             let data = [11542678.4805783, 3582697.888648468, 30]
+//             text.forEach(item => {
+//                 let lat = item.geometry.coordinates[0]
+//                 let lng = item.geometry.coordinates[1]
+//                     //console.log(lat, lng)
+//                     //console.log()
+//                 let pos = mainCRS.unproject(L.point(lat, lng));
+//                 let loc = [pos.lat, pos.lng, 30];
+//                 data.push({
+//                     name: item.properties.Name,
+//                     value: loc
+//                 })
+
+
+
+//             });
+//             console.log(data)
+//             data1 = {
+//                 name: '市第一人民医院',
+//                 value: [11542678.4805783, 3582697.888648468, 30]
+//             }
+
+
+//         })
+// }
+//医院点击事件
+$("#ldcxclick").click(function() {
+    $("#hos-pan").toggle(1000)
+})
+
+option = {
+    legend: {
+        data: ['text1', 'text2'],
+        align: 'left'
+    },
+    toolbox: {
+        feature: {
+            magicType: {
+                type: ['stack', 'tiled']
+            },
+            saveAsImage: {
+                pixelRatio: 2
+            }
+        }
+    },
+    tooltip: {},
+    xAxis: {
+        data: ['1', '2', '3', '4', '5'],
+        silent: false,
+        splitLine: {
+            show: false
+        }
+    },
+    yAxis: {},
+    series: [{
+        name: 'bar',
+        type: 'bar',
+        animationDelay: function(idx) {
+            return idx * 10;
+        }
+    }, {
+        name: 'bar2',
+        type: 'bar',
+        animationDelay: function(idx) {
+            return idx * 10 + 100;
+        }
+    }],
+    animationEasing: 'elasticOut',
+    animationDelayUpdate: function(idx) {
+        return idx * 5;
+    }
+
+
+}
+var div = L.DomUtil.create('div');
+var chart = echarts.init(div, '', {
+    width: 500,
+    height: 500
+});
+chart.setOption(option);
+
+
 function query() {
+    //clearLayer();
     let param = new SuperMap.QueryBySQLParameters({
         queryParams: [{
             name: "Hospital@EmergDS",
             attributeFilter: "1 = 1"
         }]
-    })
-    L.supermap
-        .queryService(url)
+    });
+    L.supermap.queryService(url)
         .queryBySQL(param, function(serviceResult) {
-            //console.log(serviceResult)
-            // console.log(serviceResult.result.recordsets[0].features.features)
-            let text = serviceResult.result.recordsets[0].features.features
-            console.log(text)
-            let data = [11542678.4805783, 3582697.888648468, 30]
-            text.forEach(item => {
-                let lat = item.geometry.coordinates[0]
-                let lng = item.geometry.coordinates[1]
-                    //console.log(lat, lng)
-                    //console.log()
-                let pos = mainCRS.unproject(L.point(lat, lng));
-                let loc = [pos.lat, pos.lng, 30];
-                data.push({
-                    name: item.properties.Name,
-                    value: loc
-                })
-
-
-
-            });
-            console.log(data)
-            data1 = {
-                name: '市第一人民医院',
-                value: [11542678.4805783, 3582697.888648468, 30]
-            }
-            option = {
-                title: {
-                    text: "s",
-                    subtext: 'data from PM25.in',
-                    sublink: 'http://www.pm25.in',
-                    left: 'center'
-                },
-                tooltip: {
-                    trigger: 'item'
-                },
-                legend: {
-                    orient: 'vertical',
-                    y: 'bottom',
-                    x: 'right',
-                    data: ['pm2.5'],
-                    textStyle: {
-                        color: '#666'
+            serviceResult.result.recordsets.map(function(records) {
+                resultLayer = L.geoJSON(records.features, {
+                    coordsToLatLng: function(coords) {
+                        console.log(coords)
+                        var latlng = L.CRS.EPSG3857.unproject(L.point(coords[0], coords[1]));
+                        latlng.alt = coords[2]
+                        return latlng;
                     }
-                },
-                series: [
-
-                    {
-                        name: 'pm2.5',
-                        type: 'scatter',
-                        coordinateSystem: 'leaflet',
-                        data: data,
-                        symbolSize: function(val) {
-                            console.log(val)
-                            return val[2];
-                        },
-                        label: {
-                            normal: {
-                                formatter: '{b}',
-                                position: 'right',
-                                show: false
-                            },
-                            emphasis: {
-                                show: true
-                            }
-                        },
-                        itemStyle: {
-                            normal: {
-                                color: '#ddb926'
-                            }
-                        }
+                }).bindPopup(function(layer) {
+                    console.log(layer)
+                    var city = layer.feature.properties.Name;
+                    var data1 = [];
+                    var data2 = [];
+                    for (var i = 0; i < 7; ++i) {
+                        var data = Math.random().toFixed(2);
+                        data1.push(data);
+                        data2.push(data * (Math.random() + 1.5));
                     }
-                ]
-            };
-            L.supermap.echartsLayer(option).addTo(map);
-            // serviceResult.result.recordsets[0].features.features.map(item => {
-            //     let lat = item.geometry.coordinates[0]
-            //     let lng = item.geometry.coordinates[1]
+                    chart.setOption({
+                        title: {
+                            text: city,
 
+                        },
+                        series: [{
+                            name: 'text1',
+                            data: data1
+                        }, {
+                            name: 'text2',
+                            data: data2
+                        }]
+                    })
+                    return chart.getDom();
+                }, { maxWidth: 600 }).addTo(map)
+            })
         })
+
 }
-//医院点击事件
-$("#ldcxclick").click(function() {
-    $("#hos-pan").toggle(1000)
+$("#showHos").click(function() {
+    query();
 })
