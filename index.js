@@ -1,5 +1,8 @@
 let map;
 let url = "http://localhost:8090/iserver/services/map-sxx/rest/maps/City@EmergDS";
+//定义热点
+let markers = []
+let resultLayer;
 let mainCRS = L.Proj.CRS("EPSG:3857", {
         bounds: L.bounds([11541226.6, 3579087.71], [11546271.45, 3585516.41]),
         origin: [11544275.29, 3582369.97]
@@ -14,7 +17,7 @@ map = L.map('map', {
 });
 let flag = true;
 L.supermap.tiledMapLayer(url).addTo(map);
-
+//全幅显示
 function Fullwidth() {
     map.setZoom(2, {})
 }
@@ -38,11 +41,11 @@ function translation() {
     flag = !flag
 }
 
-//医院点击事件
+//医院按钮组
 $("#ldcxclick").click(function() {
-    $("#hos-pan").toggle(1000)
-})
-
+        $("#hos-pan").toggle(1000)
+    })
+    //医院信息图表
 option = {
     legend: {
         data: ['text1', 'text2'],
@@ -94,7 +97,7 @@ var chart = echarts.init(div, '', {
 });
 chart.setOption(option);
 
-
+// 点击显示医院信息图表
 function query() {
     //clearLayer();
     let param = new SuperMap.QueryBySQLParameters({
@@ -143,5 +146,53 @@ function query() {
 
 }
 $("#showHos").click(function() {
-    query();
+        //query();
+        loadPulse();
+    })
+    // 热点图
+var pulseIcon = L.icon.pulse({
+    iconSize: [18, 18],
+    color: '#2f8'
 })
+
+
+function loadPulse() {
+    var param = new SuperMap.QueryBySQLParameters({
+        queryParams: [{
+            name: "Hospital@EmergDS",
+            attributeFilter: "1 = 1"
+        }]
+    });
+    L.supermap
+        .queryService(url)
+        .queryBySQL(param, function(serviceResult) {
+            console.log(serviceResult.result.recordsets[0].features)
+            createLayers(serviceResult.result.recordsets[0].features)
+
+        })
+
+}
+
+function createLayers(result) {
+    console.log(result)
+    if (!result || !result.features || result.features.length < 1) {
+        return;
+    }
+    result.features.map(function(feature) {
+        console.log(feature)
+        var latLng = L.CRS.EPSG3857.unproject(L.point(feature.geometry.coordinates));
+        console.log(latLng)
+        markers.push(L.marker(latLng, { icon: pulseIcon }));
+    });
+    resultLayer = L.featureGroup(markers).addTo(map);
+}
+$("#text").click(function() {
+    query()
+
+})
+
+function clearLayer(lay) {
+    if (lay) {
+        resultLayer.removeFrom(map)
+    }
+}
