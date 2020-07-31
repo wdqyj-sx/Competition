@@ -155,31 +155,30 @@ var pulseIcon = L.icon.pulse({
 loadPulse();
 
 function loadPulse() {
-    var point1 = { x: 11541226.78, y: 3579088.0 }
-    var point2 = { x: 11546271.22, y: 3585516.41 }
-    var bounds = L.latLngBounds(L.latLng(point1.y, point1.x), L.latLng(point2.y, point2.x));
-    console.log(bounds)
-    var boundsParam = new SuperMap.GetFeaturesByBoundsParameters({
-        datasetNames: ["EmergDS:Hospital_R"],
-        bounds: bounds,
-
+    var param = new SuperMap.QueryBySQLParameters({
+        queryParams: [{
+            name: "Hospital@EmergDS",
+            attributeFilter: "1 = 1"
+        }]
     });
     L.supermap
-        .featureService(url1)
-        .getFeaturesByBounds(boundsParam, function(serviceResult) {
-            console.log(serviceResult)
-            createLayers(serviceResult.result.features);
-        });
+        .queryService(url)
+        .queryBySQL(param, function(serviceResult) {
+            console.log(serviceResult.result.recordsets[0].features)
+            createLayers(serviceResult.result.recordsets[0].features)
+
+        })
+
 }
 
 function createLayers(result) {
+    console.log(result)
     if (!result || !result.features || result.features.length < 1) {
         return;
     }
     result.features.map(function(feature) {
         console.log(feature)
-        console.log(L.point(feature.geometry.coordinates[0][0][0]))
-        var latLng = L.CRS.EPSG3857.unproject(L.point(feature.geometry.coordinates[0][0][0]));
+        var latLng = L.CRS.EPSG3857.unproject(L.point(feature.geometry.coordinates));
         console.log(latLng)
         markers.push(L.marker(latLng, { icon: pulseIcon }));
     });
