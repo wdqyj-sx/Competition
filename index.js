@@ -37,47 +37,7 @@ function translation() {
     }
     flag = !flag
 }
-// query();
-// //附近医院查询
-// function query() {
-//     let param = new SuperMap.QueryBySQLParameters({
-//         queryParams: [{
-//             name: "Hospital@EmergDS",
-//             attributeFilter: "1 = 1"
-//         }]
-//     })
-//     L.supermap
-//         .queryService(url)
-//         .queryBySQL(param, function(serviceResult) {
-//             //console.log(serviceResult)
-//             // console.log(serviceResult.result.recordsets[0].features.features)
-//             let text = serviceResult.result.recordsets[0].features.features
-//             console.log(text)
-//             let data = [11542678.4805783, 3582697.888648468, 30]
-//             text.forEach(item => {
-//                 let lat = item.geometry.coordinates[0]
-//                 let lng = item.geometry.coordinates[1]
-//                     //console.log(lat, lng)
-//                     //console.log()
-//                 let pos = mainCRS.unproject(L.point(lat, lng));
-//                 let loc = [pos.lat, pos.lng, 30];
-//                 data.push({
-//                     name: item.properties.Name,
-//                     value: loc
-//                 })
 
-
-
-//             });
-//             console.log(data)
-//             data1 = {
-//                 name: '市第一人民医院',
-//                 value: [11542678.4805783, 3582697.888648468, 30]
-//             }
-
-
-//         })
-// }
 //医院点击事件
 $("#ldcxclick").click(function() {
     $("#hos-pan").toggle(1000)
