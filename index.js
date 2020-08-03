@@ -46,9 +46,13 @@ $("#ldcxclick").click(function() {
     $("#hos-pan").toggle(1000)
 })
 $("#showHos").click(function() {
-        //query();
-        loadPulse();
-        $(".chartColor").toggle()
+    //query();
+    loadPulse();
+    $(".chartColor").toggle()
+})
+$("#showSigle").click(function() {
+        query()
+
     })
     //医院信息图表
 option = {
@@ -329,11 +333,8 @@ function createLayers(result) {
     });
     resultLayer = L.featureGroup(markers).addTo(map);
 }
-$("#showSigle").click(function() {
-        query()
 
-    })
-    //清除图层
+//清除图层
 function clearLayer(lay) {
     if (lay) {
         resultLayer.removeFrom(map)
