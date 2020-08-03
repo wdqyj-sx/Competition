@@ -43,7 +43,12 @@ function translation() {
 
 //医院按钮组
 $("#ldcxclick").click(function() {
-        $("#hos-pan").toggle(1000)
+    $("#hos-pan").toggle(1000)
+})
+$("#showHos").click(function() {
+        //query();
+        loadPulse();
+        $(".chartColor").toggle()
     })
     //医院信息图表
 option = {
@@ -145,16 +150,17 @@ function query() {
         })
 
 }
-$("#showHos").click(function() {
-        //query();
-        loadPulse();
-    })
-    // 热点图
-var pulseIcon = L.icon.pulse({
-    iconSize: [18, 18],
-    color: '#2f8'
-})
 
+// 给不同医院赋予不同的颜色
+var color = ['#ea66a6', '#1d953f', '#009ad6', '#ffc20e', '#905d1d', '#4e72b8'];
+// 热点图
+var pulseIcon = [];
+for (let i = 0; i < 6; ++i) {
+    pulseIcon[i] = L.icon.pulse({
+        iconSize: [18, 18],
+        color: color[i]
+    })
+}
 
 function loadPulse() {
     var param = new SuperMap.QueryBySQLParameters({
@@ -172,25 +178,162 @@ function loadPulse() {
         })
 
 }
+//设置热点图颜色图表
+var myChart = echarts.init(document.getElementById('chartColor'));
+var scaleData = [{
+        'name': '市第一人民医院',
+        'value': 1
+    },
+    {
+        'name': '市骨科康复医院',
+        'value': 1
+    },
+    {
+        'name': '市中医院',
+        'value': 1
+    },
+    {
+        'name': '仁爱医院',
+        'value': 1
+    }, {
+        'name': '某军区总医院',
+        'value': 1
+    },
+    {
+        'name': '城南医院',
+        'value': 1
+    }
 
+];
+var placeHolderStyle = {
+    normal: {
+        label: {
+            show: false
+        },
+        labelLine: {
+            show: false
+        },
+        color: 'rgba(0, 0, 0, 0)',
+        borderColor: 'rgba(0, 0, 0, 0)',
+        borderWidth: 0
+    }
+};
+var data = [];
+var color = ['#ea66a6', '#1d953f', '#009ad6', '#ffc20e', '#905d1d', '#4e72b8'];
+var colorBorder = ['rgba(234,102,166, 0.4)', 'rgba(29,149,63, 0.4)', 'rgba(0,154,214, 0.4)', 'rgba(255,194,14, 0.4)', 'rgba(144,93,29,0.4)', 'rgba(78,114,184,0.4)'];
+for (var i = 0; i < scaleData.length; i++) {
+    data.push({
+        data: scaleData[i].value,
+        value: 20,
+        name: scaleData[i].name,
+        itemStyle: {
+            normal: {
+                color: color[i],
+                borderWidth: 7,
+                borderColor: colorBorder[i]
+            }
+        }
+    }, {
+        value: 8,
+        name: '',
+        itemStyle: placeHolderStyle
+    });
+}
+
+var seriesObj = [{
+    name: '',
+    type: 'pie',
+    clockWise: false,
+    radius: [30, 60],
+    hoverAnimation: false,
+
+
+    itemStyle: {
+        normal: {
+            label: {
+                show: false,
+
+            },
+
+        }
+    },
+    data: data
+}, {
+    name: '',
+    type: 'pie',
+    clockWise: false,
+    radius: [30, 60],
+    hoverAnimation: false,
+
+    itemStyle: {
+        normal: {
+            label: {
+                show: true,
+                position: 'outside',
+                fontSize: 10,
+                formatter: '{b}'
+
+            },
+            labelLine: {
+                length: 10,
+                length2: 30,
+                show: true
+            }
+        }
+    },
+    data: data
+}];
+option = {
+
+    tooltip: {
+        show: false
+    },
+    legend: {
+        show: false
+    },
+    toolbox: {
+        show: false
+    },
+    series: seriesObj,
+    graphic: [{
+        type: 'group',
+        left: 'center',
+        top: 'middle',
+        children: [{
+            type: 'text',
+            z: 100,
+            left: 'center',
+            top: '0',
+            style: {
+                fill: '#333',
+                text: [
+                    '附近医院'
+                ],
+                font: '10px Microsoft YaHei'
+            }
+        }]
+    }]
+}
+myChart.setOption(option);
+
+//将热点图添加到图层上
 function createLayers(result) {
-    console.log(result)
     if (!result || !result.features || result.features.length < 1) {
         return;
     }
-    result.features.map(function(feature) {
+    result.features.map((feature, index) => {
         console.log(feature)
         var latLng = L.CRS.EPSG3857.unproject(L.point(feature.geometry.coordinates));
-        console.log(latLng)
-        markers.push(L.marker(latLng, { icon: pulseIcon }));
+        markers.push(L.marker(latLng, { icon: pulseIcon[index] }));
+
     });
     resultLayer = L.featureGroup(markers).addTo(map);
 }
-$("#text").click(function() {
-    query()
+$("#showSigle").click(function() {
+        query()
 
-})
-
+    })
+    //清除图层
 function clearLayer(lay) {
     if (lay) {
         resultLayer.removeFrom(map)
