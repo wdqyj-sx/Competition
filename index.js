@@ -51,10 +51,13 @@ $("#showHos").click(function() {
     $(".chartColor").toggle()
 })
 $("#showSigle").click(function() {
-        query()
+    query()
 
-    })
-    //医院信息图表
+})
+
+// 毒气扩散按钮组
+
+//医院信息图表
 option = {
     legend: {
         data: ['text1', 'text2'],
@@ -122,6 +125,7 @@ function query() {
                     coordsToLatLng: function(coords) {
                         console.log(coords)
                         var latlng = L.CRS.EPSG3857.unproject(L.point(coords[0], coords[1]));
+                        console.log(latlng)
                         latlng.alt = coords[2]
                         return latlng;
                     }
@@ -337,6 +341,118 @@ function createLayers(result) {
 //清除图层
 function clearLayer(lay) {
     if (lay) {
-        resultLayer.removeFrom(map)
+        lay.removeFrom(map)
     }
+}
+// 最佳路径分析
+var serviceUrl = "http://localhost:8090/iserver/services/transportationAnalyst-sxx/rest/networkanalyst/EmergDS_Network@EmergDS"
+
+//findPathProcess()
+let pathPoints = []
+
+function findPathProcess(point) {
+    pathPoints.forEach(ietm => {
+        ietm.removeFrom(map)
+    })
+    let myIcon = L.icon({
+        iconUrl: './img/care.png',
+        iconSize: [30, 30]
+    })
+    let params = new SuperMap.FindPathParameters({
+        nodes: [L.point(point), L.point(11544353.698388768, 3584569.322637741)],
+        isAnalyzeById: false
+    })
+    L.supermap.networkAnalystService(serviceUrl).findPath(params, function(result) {
+        let results = result;
+        results.result.pathList.map(function(resultd) {
+            L.geoJSON(resultd.pathGuideItems, {
+                pointToLayer: function(geoPoints) {
+                    let point = L.CRS.EPSG3857.unproject(L.point(geoPoints.geometry.coordinates))
+                    let pathP = L.marker(point, { icon: myIcon }).addTo(map)
+                    pathPoints.push(pathP)
+                },
+                filter: function(geoJsonFeature) {
+                    if (geoJsonFeature.geometry && geoJsonFeature.geometry.type === 'Point') {
+                        return true
+                    }
+                    return false
+                }
+            }).addTo(map)
+        })
+    })
+}
+
+// 路径分析入口
+//findPath()
+
+function findPath() {
+    let housIcon = L.icon({
+        iconUrl: './img/hospitals.png',
+        iconSize: [35, 35]
+    })
+    let facIcon = L.icon({
+        iconUrl: './img/factory.png',
+        iconSize: [35, 35]
+    })
+    let param = new SuperMap.QueryBySQLParameters({
+        queryParams: [{
+            name: "Hospital@EmergDS",
+            attributeFilter: "1 = 1"
+        }, {
+            name: "Chemical_Factory@EmergDS",
+            attributeFilter: "1 = 1"
+        }]
+    });
+    L.supermap.queryService(url)
+        .queryBySQL(param, function(serviceResult) {
+            // console.log(serviceResult)
+            serviceResult.result.recordsets[0].features.features.map(item => {
+                console.log(item)
+                let point = item.geometry.coordinates
+                let name = item.properties.Name
+                let latlng = L.CRS.EPSG3857.unproject(L.point(item.geometry.coordinates))
+                let marker = L.marker(latlng, { icon: housIcon }).bindPopup(function() {
+                    findPathProcess(point)
+                    return name
+                }).addTo(map)
+            })
+            let facP = serviceResult.result.recordsets[1].features.features[0].geometry.coordinates
+            facP = L.CRS.EPSG3857.unproject(L.point(facP))
+            L.marker(facP, { icon: facIcon }).addTo(map)
+        })
+}
+
+//缓冲区分析
+
+let spatialURL = "http://localhost:8090/iserver/services/spatialAnalysis-sxx/restjsr/spatialanalyst"
+    //bufferAnalyst()
+
+function bufferAnalyst() {
+    let bufferService = L.supermap.spatialAnalystService(spatialURL);
+    let param = new SuperMap.DatasetBufferAnalystParameters({
+        dataset: "Chemical_Factory@EmergDS",
+        bufferSetting: new SuperMap.BufferSetting({
+            endType: SuperMap.BufferEndType.ROUND,
+            leftDistance: new SuperMap.BufferDistance({ value: 150 }),
+            rightDistance: new SuperMap.BufferDistance({ value: 150 }),
+            semicircleLineSegment: 20
+        })
+    })
+    bufferService.bufferAnalysis(param, function(serviceResult) {
+        console.log(serviceResult)
+        let result = serviceResult.result
+        items = []
+        result.recordset.features.features[0].geometry.coordinates[0][0].map(item => {
+                itemP = L.CRS.EPSG3857.unproject(L.point(item[0], item[1]))
+                items.push([itemP.lat, itemP.lng])
+
+            })
+            //console.log(items)
+            // result.recordset.features.features[0].geometry.coordinates[0][0] = items
+            // console.log(result)
+            // resultLayer = L.geoJSON(result.recordset.features, { color: "red" }).addTo(map);
+            // console.log(resultLayer)
+        let polygon = L.polygon(items, { color: 'red' }).addTo(map)
+    })
+
 }
