@@ -171,7 +171,7 @@ body {
     position: absolute;
     top: 11%;
     left: 330px;
-    width: 290px;
+    width: 426px;
     height: 110px;
     display: none;
 }
@@ -184,7 +184,12 @@ body {
     float: left;
     width: 80px;
     height: 30px;
-    margin-left: 20px;
+    margin-left: 10px;
+    font-size: 12px;
+}
+
+.btnli:last-child {
+    width: 96px;
 }
 
 .chartColor {
