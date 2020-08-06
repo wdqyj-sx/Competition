@@ -384,6 +384,7 @@ function clearAllLayer() {
     bufferAnswer.forEach(item => {
         clearLayer(item)
     })
+    clearLayer(polyline)
     $(".chartColor").hide()
     $(".lddjclick").hide()
     $("#gasArea").hide()
@@ -394,25 +395,53 @@ var serviceUrl = "http://localhost:8090/iserver/services/transportationAnalyst-s
 
 let pathPoints = []
 let facPoints = []
+let linePoint = []
+let polyline;
 
 function findPathProcess(point) {
-    pathPoints.forEach(ietm => {
-        ietm.removeFrom(map)
-    })
+    if (pathPoints) {
+        pathPoints.forEach(ietm => {
+            ietm.removeFrom(map)
+        })
+    }
+
+    linePoint = []
+    if (polyline) {
+        polyline.removeFrom(map)
+    }
+
     let myIcon = L.icon({
         iconUrl: './img/care.png',
         iconSize: [30, 30]
     })
     let params = new SuperMap.FindPathParameters({
         nodes: [L.point(point), L.point(11544353.698388768, 3584569.322637741)],
-        isAnalyzeById: false
+        isAnalyzeById: false,
+        parameter: analystParameter
     })
+    var resultSetting = new SuperMap.TransportationAnalystResultSetting({
+        returnEdgeFeatures: true,
+        returnEdgeGeometry: true,
+        returnEdgeIDs: true,
+        returnNodeFeatures: true,
+        returnNodeGeometry: true,
+        returnNodeIDs: true,
+        returnPathGuides: true,
+        returnRoutes: true
+    });
+    var analystParameter = new SuperMap.TransportationAnalystParameter({
+        resultSetting: resultSetting,
+        weightFieldName: "SmLength"
+    });
+
     L.supermap.networkAnalystService(serviceUrl).findPath(params, function(result) {
         let results = result;
         results.result.pathList.map(function(resultd) {
+            console.log(resultd)
             L.geoJSON(resultd.pathGuideItems, {
                 pointToLayer: function(geoPoints) {
                     let point = L.CRS.EPSG3857.unproject(L.point(geoPoints.geometry.coordinates))
+                    linePoint.push(point)
                     let pathP = L.marker(point, { icon: myIcon }).addTo(map)
                     pathPoints.push(pathP)
                 },
@@ -424,6 +453,8 @@ function findPathProcess(point) {
                 }
             }).addTo(map)
         })
+
+        polyline = L.polyline(linePoint, { color: 'red' }).addTo(map)
     })
 }
 
